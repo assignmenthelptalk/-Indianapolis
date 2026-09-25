@@ -1,0 +1,43 @@
+---
+/**
+ * QuickFacts — a compact, verified-data callout reused across every page.
+ * Reads site.config.ts directly so it never needs per-page editing and stays
+ * accurate if the config ever changes. Deliberately written as a handful of
+ * short, fact-dense sentences (each under 30 words) rather than one long
+ * run-on, and includes an explicit "as of 2026" currency signal alongside a
+ * genuine hardness-scale comparison point.
+ */
+import { site } from "../lib/site";
+---
+
+<div class="quick-facts">
+  <p class="quick-facts-label">Verified Local Water Data</p>
+  <p>{site.city} tests at {site.gpgLow}-{site.gpgHigh} GPG ({site.gpgLabel}) as of 2026, sourced from {site.waterSource}. {site.waterAuthority} delivers this supply to {site.population} residents of {site.county}. Coverage spans ZIP codes {site.zipCodes.join(", ")}, including {site.neighbourhoods.join(", ")}. Compared to the {site.gpgLow}-{site.gpgHigh} GPG range that classifies as {site.gpgLabel}, softer municipal supplies under 3 GPG rarely need treatment at all.</p>
+</div>
+
+<style>
+  .quick-facts {
+    background: var(--color-primary-light);
+    border-left: 4px solid var(--color-primary);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 32px auto;
+    max-width: 900px;
+  }
+  .quick-facts-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-primary-dark, var(--color-primary));
+    margin: 0 0 8px;
+  }
+  .quick-facts p:not(.quick-facts-label) {
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--color-text);
+    margin: 0;
+  }
+</style>

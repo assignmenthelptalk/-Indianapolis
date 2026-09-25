@@ -1,0 +1,671 @@
+---
+import { site } from "../lib/site";
+---
+
+<section class="map-section-wrapper">
+  <div class="map-section-inner">
+
+    <div class="map-section-header">
+      <h2>{site.city} Neighbourhood Water Hardness</h2>
+      <p>Every pin below reflects the same {site.gpgLow}-{site.gpgHigh} GPG reading {site.waterAuthority} reports citywide, per its own service data. Click a neighbourhood to see its full hardness report and get a free quote for your address.</p>
+    </div>
+
+    <div class="map-panel">
+
+      <!-- Left: map -->
+      <div class="map-left">
+        <div id="indianapolis-map"></div>
+        <button class="map-reset-btn" id="map-reset-btn" aria-label="Reset map to Indianapolis view">
+          ⌖ Reset View
+        </button>
+        <div class="map-legend">
+          <span class="legend-selected">● Selected Area</span>
+          <span class="legend-available">○ Available Data</span>
+        </div>
+      </div>
+
+      <!-- Right: report panel -->
+      <div class="map-right" id="neighbourhood-report">
+
+        <div class="report-header">
+          ⚡ Neighbourhood Report
+        </div>
+
+        <div class="report-body">
+          <!-- Default state — no neighbourhood selected -->
+          <div class="report-default" id="report-default">
+            <p>Select a neighbourhood on the map to see its hardness report.</p>
+          </div>
+
+          <!-- Active state — neighbourhood selected (hidden until click) -->
+          <div class="report-active" id="report-active" style="display:none">
+            <div class="report-field">
+              <span class="field-label">NEIGHBOURHOOD</span>
+              <span class="field-value" id="report-name"></span>
+            </div>
+            <div class="report-field">
+              <span class="field-label">HARDNESS LEVEL</span>
+              <div class="gpg-row">
+                <span class="gpg-number" id="report-gpg"></span>
+                <span class="gpg-unit">GPG</span>
+                <span class="gpg-badge">{site.gpgLabel.toUpperCase()}</span>
+              </div>
+            </div>
+            <div class="report-wqa" id="report-wqa"></div>
+            <div class="report-issues-wrapper">
+              <p class="issues-heading" id="report-issues-heading"></p>
+              <ul class="report-issues" id="report-issues"></ul>
+            </div>
+            <a href="/quote/" class="report-cta" id="report-cta">
+              Get a Free Water Softener Quote in Indianapolis
+            </a>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Section wrapper */
+  .map-section-wrapper {
+    padding: 80px 24px;
+    background: var(--surface-elevated);
+  }
+  .map-section-inner { max-width: 1200px; margin: 0 auto; }
+  .map-section-header { text-align: center; margin-bottom: 40px; }
+  .map-section-header h2 {
+    font-family: var(--font-heading);
+    font-size: clamp(28px, 4vw, 42px);
+    letter-spacing: -0.03em;
+    color: var(--surface-footer);
+  }
+  .map-section-header p {
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--color-text-muted);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+
+  /* Split panel */
+  .map-panel {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* Map container */
+  .map-left { position: relative; }
+  #indianapolis-map {
+    height: 480px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(27,58,107,0.15);
+    background: var(--surface-footer);
+  }
+  /* Recolors keyless OpenStreetMap raster tiles to match the navy/gold theme —
+     scoped to the tile pane only (not markers/popups/controls), which are
+     separate sibling panes in Leaflet's DOM and so stay unaffected. */
+  :global(#indianapolis-map .leaflet-tile-pane) {
+    filter: invert(1) hue-rotate(190deg) brightness(1.18) contrast(0.85) saturate(0.65);
+  }
+
+  /* Reset View button — top right, never overlaps the bottom-left legend */
+  .map-reset-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1000;
+    padding: 8px 14px;
+    background: white;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-primary);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: border-color 150ms ease,
+                box-shadow 150ms ease,
+                transform 150ms ease;
+  }
+  .map-reset-btn:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(27,58,107,0.20);
+    transform: translateY(-1px);
+  }
+  .map-reset-btn:active { transform: scale(0.97); }
+  .map-reset-btn:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Map legend */
+  .map-legend {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    background: rgba(27,58,107,0.85);
+    backdrop-filter: blur(4px);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 1000;
+  }
+  .legend-selected {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    color: #C89B3C;
+  }
+  .legend-available {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.60);
+  }
+
+  /* Pin styles */
+  :global(.map-pin-default) {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 2px solid rgba(255,255,255,0.50);
+    cursor: pointer;
+    transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
+  }
+  :global(.map-pin-default:hover) {
+    border-color: white;
+    background: rgba(255,255,255,0.28);
+    transform: scale(1.15);
+  }
+  :global(.map-pin-active) {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #1B3A6B;
+    border: 3px solid white;
+    box-shadow: 0 0 0 4px rgba(27,58,107,0.30);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+  }
+  :global(.map-pin-pulse) {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    background: rgba(27,58,107,0.20);
+    animation: pin-pulse 2s ease-out infinite;
+  }
+  @keyframes pin-pulse {
+    0%   { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2); opacity: 0; }
+  }
+
+  /* Map label popup */
+  :global(.map-label-popup .leaflet-popup-content-wrapper) {
+    background: white;
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+  :global(.map-label-popup .leaflet-popup-content) {
+    margin: 8px 16px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+  }
+  :global(.map-label-popup .leaflet-popup-tip) {
+    background: white;
+  }
+
+  /* Hover tooltip — overrides Leaflet default styling */
+  :global(.map-tooltip-wrapper) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+  :global(.map-tooltip-wrapper::before) {
+    display: none !important;
+  }
+  :global(.map-hover-tooltip) {
+    background: white;
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25),
+                0 1px 4px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 120px;
+    text-align: center;
+  }
+  :global(.tooltip-name) {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+  }
+  :global(.tooltip-gpg) {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: #6B7280;
+    font-weight: 500;
+  }
+
+  /* Report panel */
+  .map-right {
+    background: var(--surface-base);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    position: sticky;
+    top: 80px;
+  }
+  .report-header {
+    background: #1B3A6B;
+    color: white;
+    padding: 16px 20px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .report-body { padding: 24px; }
+  .report-default {
+    color: #9CA3AF;
+    font-family: var(--font-body);
+    font-size: 14px;
+    text-align: center;
+    padding: 32px 16px;
+    line-height: 1.6;
+  }
+  .report-field { margin-bottom: 20px; }
+  .field-label {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #9CA3AF;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .field-value {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    color: #111827;
+    display: block;
+  }
+  .gpg-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .gpg-number {
+    font-family: var(--font-heading);
+    font-size: 48px;
+    color: #111827;
+    line-height: 1;
+  }
+  .gpg-unit {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: #6B7280;
+    font-weight: 500;
+  }
+  .gpg-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: #FEE2E2;
+    color: #991B1B;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .wqa-note {
+    background: #E8EEF6;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: #1B3A6B;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-style: italic;
+  }
+  .issues-heading {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+  .report-issues {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+  }
+  .report-issues li {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: #6B7280;
+    padding: 8px 0;
+    border-bottom: 1px solid #F3F4F6;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  .report-issues li:last-child { border-bottom: none; }
+  .report-issues li::before {
+    content: '•';
+    color: var(--color-accent);
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .report-cta {
+    display: block;
+    padding: 13px 20px;
+    background: var(--color-accent);
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(200,155,60,0.30);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
+  .report-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(200,155,60,0.40);
+  }
+  .report-cta:active {
+    transform: translateY(0);
+  }
+  .report-cta:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* Mobile */
+  @media (max-width: 768px) {
+    .map-panel {
+      grid-template-columns: 1fr;
+    }
+    .map-right {
+      order: -1;
+      position: static;
+    }
+    #indianapolis-map { height: 320px; }
+    .map-section-wrapper { padding: 48px 16px; }
+  }
+</style>
+
+<script>
+  import L from "leaflet";
+
+  interface Neighbourhood {
+    name: string;
+    coords: [number, number];
+    gpgRange: string;
+    classification: string;
+    description: string;
+    wqaNote: string;
+    issues: string[];
+  }
+
+  // MAP_CONFIG — Indianapolis, IN
+  // Recentred on the actual midpoint of the 5 configured neighbourhoods
+  // (lat 39.7522-39.9069, lng -86.1472 to -86.0522) after dev-server
+  // verification showed the original -86.13 centre was too far west,
+  // cutting off Irvington and Castleton. Zoom dropped 12->11 because the
+  // neighbourhood spread's 0.1547 degrees of latitude exceeds what a
+  // 480px-tall map comfortably shows at zoom 12.
+  // Bounds: south 39.72 / west -86.20 / north 39.93 / east -86.03
+  // Verified against OpenStreetMap-sourced coordinates — see PROVISION.md.
+  const CITY_CENTER: [number, number] = [39.83, -86.10];
+  const MAP_ZOOM = 11;
+  const MIN_ZOOM = 11;
+  const MAX_ZOOM = 14;
+  const BOUNDS_SOUTH = 39.72;
+  const BOUNDS_WEST = -86.20;
+  const BOUNDS_NORTH = 39.93;
+  const BOUNDS_EAST = -86.03;
+
+  const neighbourhoods: Neighbourhood[] = [
+    {
+      name: "Broad Ripple",
+      coords: [39.8667, -86.1417],
+      gpgRange: "12–20",
+      classification: "VERY HARD",
+      description:
+        "One of Indianapolis's oldest streetcar-era neighbourhoods, built up through the early-to-mid 1900s along the Central Canal. Original galvanized supply lines in these bungalows and Tudor cottages show scale damage faster than newer construction.",
+      wqaNote: 'Anything above 10.5 GPG is considered "Very Hard" by the Water Quality Association.',
+      issues: [
+        "Scale buildup inside century-old galvanized supply lines, restricting flow",
+        "Heavy mineral spotting on canal-side restaurant and bar dishware",
+        "Reduced water heater lifespan in homes never upgraded past original plumbing",
+        "Soap scum on original clawfoot tubs and vintage bathroom fixtures",
+      ],
+    },
+    {
+      name: "Meridian-Kessler",
+      coords: [39.8430, -86.1472],
+      gpgRange: "12–20",
+      classification: "VERY HARD",
+      description:
+        "An early-1900s to 1930s historic district of large Tudor, Colonial Revival, and American Foursquare homes along tree-lined Meridian Street. Multiple full bathrooms per home mean more fixtures exposed to scale buildup.",
+      wqaNote: 'Anything above 10.5 GPG is considered "Very Hard" by the Water Quality Association.',
+      issues: [
+        "Scale deposits across multiple original bathrooms in larger historic homes",
+        "Mineral staining on restored period brass and nickel fixtures",
+        "Water heater efficiency loss in homes with original 1920s-era plumbing runs",
+        "Spotting on fine glassware and dishes from hard-water dishwasher cycles",
+      ],
+    },
+    {
+      name: "Fountain Square",
+      coords: [39.7522, -86.1400],
+      gpgRange: "12–20",
+      classification: "VERY HARD",
+      description:
+        "A revitalized late-1800s working-class district of shotgun houses and bungalows south of downtown, now dense with restaurants and bars. Older, smaller-diameter supply lines are especially prone to scale-narrowed flow.",
+      wqaNote: 'Anything above 10.5 GPG is considered "Very Hard" by the Water Quality Association.',
+      issues: [
+        "Scale-narrowed original supply lines reducing water pressure in older bungalows",
+        "Heavy glassware and dish spotting in the district's dense restaurant and bar corridor",
+        "Stiff, scratchy laundry in homes without any existing treatment",
+        "Accelerated corrosion where old galvanized pipe meets newer copper repairs",
+      ],
+    },
+    {
+      name: "Irvington",
+      coords: [39.7656, -86.0761],
+      gpgRange: "12–20",
+      classification: "VERY HARD",
+      description:
+        "Platted in 1870 and one of Indianapolis's oldest planned suburbs, with Victorian and Craftsman homes on the National Register of Historic Places. Some of the city's oldest plumbing infrastructure sits behind these walls.",
+      wqaNote: 'Anything above 10.5 GPG is considered "Very Hard" by the Water Quality Association.',
+      issues: [
+        "Scale buildup inside some of the city's oldest residential supply lines",
+        "Mineral damage to preserved Victorian-era fixtures and clawfoot tubs",
+        "Reduced water heater lifespan in homes on original 19th-century plumbing runs",
+        "Chalky residue on historic stained glass and leaded windows during exterior washing",
+      ],
+    },
+    {
+      name: "Castleton",
+      coords: [39.9069, -86.0522],
+      gpgRange: "12–20",
+      classification: "VERY HARD",
+      description:
+        "A newer north-side commercial and residential area built up mainly from the 1970s through the 2000s around Castleton Square. Larger newer-construction homes and HOA subdivisions bring different exposure — pools, irrigation, and multiple modern appliances.",
+      wqaNote: 'Anything above 10.5 GPG is considered "Very Hard" by the Water Quality Association.',
+      issues: [
+        "Scale forming in irrigation heads and outdoor spigots across newer subdivisions",
+        "Pool and hot tub equipment scaling faster than expected for newer builds",
+        "New appliance warranties at risk from hardness deposits within the first year",
+        "Efficiency loss in modern tankless water heaters common in newer Castleton homes",
+      ],
+    },
+  ];
+
+  function defaultIcon(): L.DivIcon {
+    return L.divIcon({
+      className: "map-pin-wrapper",
+      html: '<div class="map-pin-default"></div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+      popupAnchor: [0, -14],
+    });
+  }
+
+  function activeIcon(): L.DivIcon {
+    return L.divIcon({
+      className: "map-pin-wrapper",
+      html: `<div class="map-pin-active">
+               <span class="map-pin-pulse"></span>
+               <svg viewBox="0 0 24 24" width="14" height="14" fill="white">
+                 <path d="M13 2L4.09 12.26h6.65L9.61 22 20 11.74h-6.65z"/>
+               </svg>
+             </div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -18],
+    });
+  }
+
+  const mapEl = document.getElementById("indianapolis-map");
+
+  if (mapEl) {
+    const map = L.map(mapEl, {
+      center: CITY_CENTER,
+      zoom: MAP_ZOOM,
+      minZoom: MIN_ZOOM, // tighter minimum so the user cannot zoom out to the whole metro area
+      maxZoom: MAX_ZOOM,
+      zoomControl: true,
+      attributionControl: true,
+    });
+
+    // CARTO's keyless dark_all raster basemap (basemaps.cartocdn.com) and
+    // Stadia Maps both require an API key as of September 2026. Standard
+    // OpenStreetMap raster tiles are the last remaining truly free, keyless,
+    // account-free raster tile source; a CSS filter on the tile pane (see
+    // .leaflet-tile-pane above) recolors them to match the navy/gold design
+    // system instead. Do not switch this tile URL — see CLAUDE.md → "Map
+    // Component — Tile Layer Rule".
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      subdomains: "abc",
+      maxZoom: 19,
+    }).addTo(map);
+
+    // Locks panning to Indianapolis so the user can't drag the map out to
+    // surrounding Hamilton/Hendricks/Johnson County suburbs and lose the pins.
+    const indianapolisBounds = L.latLngBounds(
+      [BOUNDS_SOUTH, BOUNDS_WEST],
+      [BOUNDS_NORTH, BOUNDS_EAST],
+    );
+    map.setMaxBounds(indianapolisBounds);
+    map.on("drag", () => {
+      map.panInsideBounds(indianapolisBounds, { animate: false });
+    });
+
+    let activeMarker: L.Marker | null = null;
+    let activePopup: L.Popup | null = null;
+
+    const reportDefault = document.getElementById("report-default");
+    const reportActive = document.getElementById("report-active");
+    const reportName = document.getElementById("report-name");
+    const reportGpg = document.getElementById("report-gpg");
+    const reportWqa = document.getElementById("report-wqa");
+    const reportIssuesHeading = document.getElementById("report-issues-heading");
+    const reportIssues = document.getElementById("report-issues");
+    const reportCta = document.getElementById("report-cta");
+
+    const resetBtn = document.getElementById("map-reset-btn");
+    if (resetBtn) {
+      resetBtn.addEventListener("click", () => {
+        map.setView(CITY_CENTER, MAP_ZOOM, { animate: true });
+        // Close any open popup
+        if (activePopup) map.closePopup(activePopup);
+      });
+    }
+
+    neighbourhoods.forEach((hood) => {
+      const marker = L.marker(hood.coords, { icon: defaultIcon() }).addTo(map);
+
+      // Hover tooltip — shows name and GPG on mouseover
+      marker.bindTooltip(
+        `<div class="map-hover-tooltip">
+           <span class="tooltip-name">${hood.name}</span>
+           <span class="tooltip-gpg">${hood.gpgRange} GPG</span>
+         </div>`,
+        {
+          permanent: false,
+          direction: "bottom",
+          offset: [0, 8],
+          opacity: 1,
+          className: "map-tooltip-wrapper",
+        },
+      );
+
+      marker.on("click", () => {
+        marker.closeTooltip();
+        if (activeMarker && activeMarker !== marker) {
+          activeMarker.setIcon(defaultIcon());
+        }
+        if (activePopup) {
+          map.closePopup(activePopup);
+        }
+
+        marker.setIcon(activeIcon());
+        activeMarker = marker;
+
+        // Centre map on clicked neighbourhood so the user always knows
+        // where they are.
+        map.setView(hood.coords, MAP_ZOOM, { animate: true });
+
+        activePopup = L.popup({
+          closeButton: false,
+          className: "map-label-popup",
+          offset: [0, -10],
+        })
+          .setLatLng(hood.coords)
+          .setContent(`<strong>${hood.name}</strong>`)
+          .openOn(map);
+
+        if (reportDefault) reportDefault.style.display = "none";
+        if (reportActive) reportActive.style.display = "block";
+        if (reportName) reportName.textContent = hood.name;
+        if (reportGpg) reportGpg.textContent = hood.gpgRange;
+        if (reportWqa) reportWqa.innerHTML = `<div class="wqa-note">ℹ️ ${hood.wqaNote}</div>`;
+        if (reportIssuesHeading) reportIssuesHeading.textContent = `Common issues in ${hood.name}:`;
+        if (reportIssues) reportIssues.innerHTML = hood.issues.map((i) => `<li>${i}</li>`).join("");
+        if (reportCta) reportCta.textContent = `Free Consultation for ${hood.name} →`;
+      });
+    });
+  }
+</script>

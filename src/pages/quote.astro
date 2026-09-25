@@ -1,0 +1,64 @@
+---
+import Layout from "../components/Layout.astro";
+import PageHero from "../components/PageHero.astro";
+import QuoteForm from "../components/QuoteForm.astro";
+import QuickFacts from "../components/QuickFacts.astro";
+import { site } from "../lib/site";
+
+const primaryCta = site.phoneNumber && site.phoneNumber !== "PHONE_NUMBER"
+  ? { href: `tel:${site.phoneNumber}`, text: `📞 ${site.phoneNumber}` }
+  : { href: "/contact/", text: "📞 Call for a Free Consultation" };
+---
+
+<Layout
+  title={`Free Water Softener Quote in ${site.city}, ${site.stateAbbr}`}
+  description={`Request a free, no-obligation water softener quote for your home in ${site.city}, ${site.stateAbbr}.`}
+>
+  <PageHero
+    breadcrumbs={[{ label: "Quote" }]}
+    heading={`Free Water Softener Quote in ${site.city}, ${site.stateAbbr} | Trusted Local Specialists`}
+    primaryCta={primaryCta}
+    secondaryCta={{ href: "/installation/", text: "Water Softener Installation in Indianapolis: Process, Timeline & Cost" }}
+  >
+    <p slot="opening">
+      <a href="/" class="brand-link">Water Softeners of {site.city}</a>
+      {" "}provides free water testing and no-obligation quotes, such as GPG-based system sizing, across
+      {" "}{site.city} and {site.county}. We confirm your exact {site.gpgLow}-{site.gpgHigh} GPG reading from
+      {site.waterAuthority} before recommending any system. Pricing confirmed in writing before any work
+      begins. No surprise charges. No obligation to proceed.
+    </p>
+  </PageHero>
+
+  <section class="section quote-section">
+    <div class="container quote-grid">
+      <div>
+        <p>Tell us a bit about your home and we'll follow up with a no-obligation recommendation and price, sized for {site.city}'s {site.gpgLow}–{site.gpgHigh} GPG water.</p>
+        <ul class="quote-benefits">
+          <li>Free in-home or virtual water hardness test</li>
+          <li>No-obligation, transparent pricing</li>
+          <li>Local installation across {site.county}</li>
+        </ul>
+        {site.phoneNumber !== "PHONE_NUMBER" && (
+          <p class="quote-phone">Prefer to talk now? Call <a href={`tel:${site.phoneNumber}`}>{site.phoneNumber}</a></p>
+        )}
+        <QuickFacts />
+      </div>
+      <QuoteForm />
+    </div>
+  </section>
+
+  <style>
+    .quote-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .quote-benefits { padding-left: 20px; color: var(--color-text-muted); }
+    .quote-benefits li { margin-bottom: 8px; }
+    .quote-phone { margin-top: 24px; font-weight: 600; }
+    @media (max-width: 860px) {
+      .quote-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</Layout>
