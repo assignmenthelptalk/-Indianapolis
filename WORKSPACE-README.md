@@ -12,7 +12,9 @@ in per-city data here — that's the rest of this file, below.
 | Full design system (global.css) | ✅ deep navy `#1B3A6B` / warm gold `#C89B3C` theme, already set in `site.config.ts`'s `design` object before this session started — a deliberate per-site override from the boilerplate's teal/orange default |
 | Layout.astro (utility bar + Services-dropdown nav + minimal footer) | ✅ unchanged from boilerplate |
 | Homepage (hero, brand-IS opening, services grid, GPG data, 2 alternating image-text, IndianapolisMap, why-choose-us, FAQ accordion, slim CTA bar) | ✅ fully written this session, brief-grounded, Koray rules applied |
-| PageHero.astro (split inner-page hero: breadcrumbs, H1, opening paragraph, CTAs left; GPG stat-card right — no real photography on this site) | ✅ wired into all 21 inner pages |
+| PageHero.astro (split inner-page hero: breadcrumbs, H1, opening paragraph, CTAs left; real photo or GPG stat-card right) | ✅ wired into all 21 inner pages — 19 now show a real photo, 2 (`installation`, `salt-free-installation`) still show the GPG stat-card fallback, no photo generated for those yet |
+| Favicon (`public/favicon.svg`) | ✅ added in a later session — navy `#1B3A6B` rounded-square badge, light water-droplet mark, warm gold `#C89B3C` highlight ellipse tying in the accent color, distinct from the droplet marks used on the Minneapolis/Tampa/Henderson sibling sites |
+| Real photography (`src/assets/images/`) | ✅ added in a later session — 22 WebP images (homepage hero + 2 alternating-section tiles + 19 inner-page headers). Sourced as 23 AI-generated (Gemini) images saved to `public/`, hand-matched to the correct page by visually inspecting each one's content (filenames were meaningless hashes), converted to WebP via `sharp` and moved into `src/assets/images/`, then wired through `astro:assets`'s `<Image>` component on the homepage and via a `headerImage` import + `image={headerImage}` prop on each `<PageHero>` call. 1 of the 23 source images was an unused near-duplicate; 2 header slots (`installation-header`, `salt-free-installation-header`) have no matching photo yet — see Notes |
 | Opening paragraph pattern (Glendale Elite: Brand IS on homepage, Brand OFFERS inside the hero on inner pages) | ✅ applied on every page |
 | QuoteForm.astro | ✅ present, `businessEmail` still the `BUSINESS_EMAIL` placeholder token (no tenant yet) |
 | Breadcrumbs.astro | ✅ present |
@@ -25,10 +27,12 @@ in per-city data here — that's the rest of this file, below.
 | CLAUDE.md / PROVISION.md | ✅ pre-existing, unchanged |
 | InstallationProcess.astro / Testimonials.astro | ❌ not built — not required by PROVISION.md Step 5b (only the neighbourhood map is listed as required city-specific work) |
 
-**Next action**: This site is content-complete and quality-gated. Remaining
-provisioning steps (7–10: Vercel deploy, custom domain, Search Console,
-citations) are explicitly out of scope for this session — see Provisioning
-checklist below.
+**Next action**: This site is content-complete, quality-gated, has a favicon
+and real photography, and is pushed to GitHub. Remaining provisioning steps
+(7–10: Vercel deploy, custom domain, Search Console, citations) have not
+been done yet — see Provisioning checklist below. Optionally: generate the
+2 missing photos (`installation-header`, `salt-free-installation-header`)
+before deploying.
 
 ## Site identity
 - Domain:           watersoftenerofindianapolis.com
@@ -37,10 +41,10 @@ checklist below.
 - Water source:      The White River, Fall Creek, Eagle Creek Reservoir, Geist Reservoir, and Morse Reservoir, supplemented by area groundwater wells
 - Water authority:   Citizens Energy Group (Citizens Water)
 - Primary keyword:   water softener indianapolis in (search volume unverified — no keyword-tool access this build)
-- GitHub repo:       not yet created — out of scope this session
-- Vercel project:    not yet created — out of scope this session
-- Vercel URL:        not yet created — out of scope this session
-- Live domain:       not yet connected — Step 8 not done, out of scope this session
+- GitHub repo:       https://github.com/assignmenthelptalk/-Indianapolis (private, `main` branch, pushed)
+- Vercel project:    not yet created
+- Vercel URL:        not yet created
+- Live domain:       not yet connected — Step 8 not done
 
 ## Folder structure
 - Local-SEO-Toolkit/
@@ -91,10 +95,17 @@ dynamic route, which builds zero pages while `serviceAreas: []`).
 **19 of 20 scored pages are 80+ and ship-ready. Average score: 85/100.**
 ✅ = done | 🔄 = in progress | ⏳ = not started | ❌ = blocked
 
-## Quality gate (last run: 2026-09-25)
+## Quality gate (last run: 2026-09-25, rescored after real photography was added)
 Score threshold: 80/100
 Run: cd C:\Users\lenevo\Local-SEO-Toolkit
      npm run score-built-site -- --business watersoftenerindianapolisin --dist C:\Users\lenevo\waterSoftenerProjects\watersoftenerindianapolisin\dist
+
+Rescored after wiring in real photography (favicon + 22 images) to check
+whether replacing the reverse-osmosis page's GPG stat-card fallback with a
+real photo would close the last point. **It did not move the score** —
+still 79/100, same set of failed rules. That photo swap doesn't touch page
+prose, so this was expected in hindsight; it's confirmed rather than
+assumed now.
 
 **reverse-osmosis (79/100, 1 point under threshold)** — every remaining
 failed rule traces to a documented, deliberate trade-off rather than
@@ -111,10 +122,13 @@ missing content:
   be replaced?") reads as passive to the checker — per Step 6c, FAQ
   `<summary>` questions are not rewritten into declarative claims to chase
   this rule.
-- Rules 15/20 (2 pts): the PageHero's GPG stat-card fallback (no real
-  photography exists on this site) merges with the opening paragraph into
-  one long chrome-heavy "sentence" under the checker's naive splitter —
-  the same shared-component pattern every inner page on this site uses.
+- Rules 15/20 (2 pts): CTA/nav link text ("[📞 Call for a Free
+  Consultation][Get a Free Water Softener Quote in Indianapolis]" and
+  similar) gets swept into the surrounding paragraph by the checker's naive
+  sentence splitter, reading as a context-setting opener with no action
+  verb. Confirmed this session to be unrelated to the PageHero image vs.
+  stat-card fallback — the score was identical before and after the real
+  photo was wired in.
 - Rule 26 (1 pt): breadcrumb list items have no preceding intro sentence
   (they're the first element on the page) — an accepted structural loss,
   consistent with the existing breadcrumb-anchor-text gotcha.
@@ -122,20 +136,20 @@ missing content:
   Indianapolis, IN | Trusted Local Specialists" — PROVISION.md's fixed
   pattern for this page type) contains no literal "water"/"softener"/
   "installation" token the checker's Rule 28 keyword list requires.
-- Rule 31 (1 pt): one remaining >35-word sentence, same PageHero chrome
+- Rule 31 (1 pt): one remaining >35-word sentence, same CTA/nav-link chrome
   merge as Rules 15/20.
 - Rule 32 (1 pt): "Very Hard" (the WQA classification label, `gpgLabel`)
   reads as an empty intensifier to the checker — unavoidable while
   displaying the real classification, same as every other page.
 
-Three concrete fix attempts were made and verified via rebuild+rescore
-(reordering an FAQ question to lead with "if", adding a single terminating
-period to break up the product-card feature list into a shorter sentence,
-rewording the card's lead sentence to avoid a pronoun-opener flag) — each
-was kept only if it didn't regress the score. The page settled at 79/100;
-crossing to 80 would require touching the shared `PageHero.astro`
-stat-card fallback or the affiliate disclosure wording, both of which are
-used by — or would risk — the 19 other already-passing pages.
+Three concrete fix attempts were made in an earlier session and verified
+via rebuild+rescore (reordering an FAQ question to lead with "if", adding a
+single terminating period to break up the product-card feature list into a
+shorter sentence, rewording the card's lead sentence to avoid a
+pronoun-opener flag) — each was kept only if it didn't regress the score.
+The page settled at 79/100; crossing to 80 would require touching the
+shared CTA/nav link markup or the affiliate disclosure wording, both of
+which are used by — or would risk — the 19 other already-passing pages.
 
 ## Current task
 All 22 pages written this session with brief-grounded, Indianapolis-specific
@@ -161,9 +175,10 @@ and Reset View all confirmed working — the default view needed adjustment
 (see Notes) after an initial check showed only 2 of 5 pins visible.
 Business registered in Local-SEO-Toolkit's `config/businesses.json` (a
 toolkit-local step, not a deployment) so the quality gate could run.
-**Explicitly not done this session**: git init, GitHub repo, Vercel
-deploy, custom domain, DNS, Search Console, citations, and service-area
-pages — all out of scope per this session's instructions.
+**Since this build**: a favicon and real photography (22 images) were
+added in a later session, and the repo was pushed to GitHub — see Site
+identity above. **Still not done**: Vercel deploy, custom domain, DNS,
+Search Console, citations, and service-area pages.
 
 ## Local data
 - Neighbourhoods:  Broad Ripple, Meridian-Kessler, Fountain Square, Irvington, Castleton
@@ -180,7 +195,7 @@ pages — all out of scope per this session's instructions.
 Mirrors PROVISION.md step-for-step, in the same order — check PROVISION.md
 itself if a step here needs more detail than fits on one line.
 
-- [ ] Step 1 — GitHub repo — **intentionally out of scope this session**
+- [x] Step 1 — GitHub repo — created and pushed: https://github.com/assignmenthelptalk/-Indianapolis (`main`)
 - [x] Step 2 — Boilerplate copied into the project + `npm install` (done before this session)
 - [x] Step 3 — `src/site.config.ts` filled in with real city data (done before this session; phone/email still placeholders — no tenant yet)
 - [x] Step 4 — ~~Keystatic~~ REMOVED — no CMS step
@@ -263,5 +278,26 @@ _Add any city-specific notes, open data gaps, or decisions made here._
   set in `site.config.ts`'s `design` object and `global.css`'s CSS custom
   properties before this session began — not touched, per this session's
   explicit instructions.
+- **Favicon and real photography added (2026-09-25, later session)**:
+  `public/favicon.svg` (navy/gold droplet mark) and 22 WebP images in
+  `src/assets/images/` were added and wired in, then the repo was pushed to
+  GitHub for the first time. The 22 images came from 23 AI-generated
+  (Gemini) photos saved to `public/` with meaningless hashed filenames — no
+  metadata tied them to a page, so each was opened and visually matched to
+  its correct slot by content (e.g. the shot showing calipers measuring
+  pipe diameter next to a tablet "Household Size Worksheet" →
+  `water-softener-sizing-header`). Converted to WebP via `sharp` (already a
+  project dependency) at quality 82, moved into `src/assets/images/`, and
+  the original JPGs removed from `public/`. One of the 23 was an unused
+  near-duplicate of the FAQ kitchen-conversation shot. **2 header slots
+  still have no photo** — `installation-header` and
+  `salt-free-installation-header` — because only 23 unique images existed
+  for 24 needed slots; both pages currently render `PageHero`'s designed
+  GPG stat-card fallback instead, which is not broken, just incomplete.
+  Prompts for both (and all 24 originally) were written earlier in the same
+  conversation this favicon/photography work came from. Rebuilding and
+  rescoring after the photo swap confirmed the reverse-osmosis page's score
+  (79/100) is unaffected by the image — see Quality gate section above for
+  the corrected explanation.
 - Full detail on all of the above is in the conversation history — this
   file is a status snapshot, not a replacement for it.
