@@ -4,6 +4,7 @@ import PageHero from "../components/PageHero.astro";
 import GPGSlider from "../components/GPGSlider.astro";
 import QuickFacts from "../components/QuickFacts.astro";
 import { site } from "../lib/site";
+import headerImage from "../assets/images/water-quality-header.webp";
 
 const primaryCta = site.phoneNumber && site.phoneNumber !== "PHONE_NUMBER"
   ? { href: `tel:${site.phoneNumber}`, text: `📞 ${site.phoneNumber}` }
@@ -17,6 +18,7 @@ const primaryCta = site.phoneNumber && site.phoneNumber !== "PHONE_NUMBER"
   <PageHero
     breadcrumbs={[{ label: "Water Quality" }]}
     heading={`${site.city} Water Quality Report | Trusted Local Specialists`}
+    image={headerImage}
     primaryCta={primaryCta}
     secondaryCta={{ href: "/quote/", text: "Get a Free Quote" }}
   >

@@ -3,6 +3,7 @@ import Layout from "../../components/Layout.astro";
 import PageHero from "../../components/PageHero.astro";
 import QuickFacts from "../../components/QuickFacts.astro";
 import { site } from "../../lib/site";
+import headerImage from "../../assets/images/salt-based-installation-header.webp";
 
 const primaryCta = site.phoneNumber && site.phoneNumber !== "PHONE_NUMBER"
   ? { href: `tel:${site.phoneNumber}`, text: `📞 ${site.phoneNumber}` }
@@ -35,6 +36,7 @@ const faqs = [
   <PageHero
     breadcrumbs={[{ label: "Installation", href: "/installation/" }, { label: "Salt-Based Installation" }]}
     heading={`Salt-Based Water Softener Installation in ${site.city}, ${site.stateAbbr} | Trusted Local Specialists`}
+    image={headerImage}
     primaryCta={primaryCta}
     secondaryCta={{ href: "/quote/", text: "Get a Free Water Softener Quote in Indianapolis" }}
   >
